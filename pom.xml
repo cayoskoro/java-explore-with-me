@@ -60,7 +60,7 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.3</version>
+							<version>10.12.6</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -86,6 +86,10 @@
 					<version>0.8.8</version>
 					<configuration>
 						<output>file</output>
+						<excludes>
+							<exclude>**/*HitMapperImpl.class</exclude>
+							<exclude>**/*StatsMapperImpl.class</exclude>
+						</excludes>
 					</configuration>
 					<executions>
 						<execution>

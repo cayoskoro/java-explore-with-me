@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import ru.practicum.dto.EndpointHitDto;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -42,8 +43,8 @@ public class StatsClient {
         return get("/stats", parameters);
     }
 
-    public ResponseEntity<Object> addHit() {
-        return post("/hit", null);
+    public ResponseEntity<Object> addHit(EndpointHitDto endpointHitDto) {
+        return post("/hit", endpointHitDto);
     }
 
     private ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {

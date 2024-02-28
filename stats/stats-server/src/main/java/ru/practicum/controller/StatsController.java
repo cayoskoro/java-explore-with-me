@@ -2,6 +2,7 @@ package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +23,8 @@ public class StatsController {
     private final StatsService service;
 
     @GetMapping("/stats")
-    public Collection<ViewStatsDto> getAllStats(@RequestParam LocalDateTime start, @RequestParam LocalDateTime end,
+    public Collection<ViewStatsDto> getAllStats(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
+                                                @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
                                                 @RequestParam(required = false) Collection<String> uris,
                                                 @RequestParam(required = false, defaultValue = "false") boolean unique) {
         return service.getAllStats(start, end, uris, unique);

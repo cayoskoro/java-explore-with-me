@@ -9,6 +9,7 @@ import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.mapper.HitMapper;
 import ru.practicum.mapper.StatsMapper;
 import ru.practicum.model.Hit;
+import ru.practicum.model.Stats;
 import ru.practicum.repository.StatsRepository;
 import ru.practicum.service.StatsService;
 
@@ -27,7 +28,16 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public Collection<ViewStatsDto> getAllStats(LocalDateTime start, LocalDateTime end, Collection<String> uris,
                                                 boolean unique) {
-        return null;
+        log.info("Запрос статистики с параметрами: start = {}, end = {}, uris = {}, unique = {}", start, end, uris,
+                unique);
+
+        Collection<Stats> statsCollection;
+        if (unique) {
+            statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisInWithUniqueIp(start, end, uris);
+        } else {
+            statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisIn(start, end, uris);
+        }
+        return statsMapper.convertToViewDtoCollection(statsCollection);
     }
 
     @Override

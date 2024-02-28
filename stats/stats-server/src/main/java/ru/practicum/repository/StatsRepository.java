@@ -25,5 +25,18 @@ public interface StatsRepository extends JpaRepository<Hit, Long> {
     public Collection<Stats> findAllByTimestampBetweenDatesAndUrisInWithUniqueIp(LocalDateTime start, LocalDateTime end,
                                                                      Collection<String> uris);
 
+    @Query(value = "SELECT new ru.practicum.model.Stats(h.app, h.uri, COUNT(h.ip)) " +
+            "FROM Hit AS h " +
+            "WHERE h.timestamp BETWEEN ?1 AND ?2 " +
+            "GROUP BY h.app, h.uri " +
+            "ORDER BY COUNT(h.ip) DESC")
+    public Collection<Stats> findAllByTimestampBetweenDates(LocalDateTime start, LocalDateTime end);
+
+    @Query(value = "SELECT new ru.practicum.model.Stats(h.app, h.uri, COUNT(DISTINCT h.ip)) " +
+            "FROM Hit AS h " +
+            "WHERE h.timestamp BETWEEN ?1 AND ?2 " +
+            "GROUP BY h.app, h.uri " +
+            "ORDER BY COUNT(h.ip) DESC")
+    public Collection<Stats> findAllByTimestampBetweenDatesWithUniqueIp(LocalDateTime start, LocalDateTime end);
 
 }

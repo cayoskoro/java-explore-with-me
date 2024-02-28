@@ -3,11 +3,7 @@ package ru.practicum.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.service.StatsService;
@@ -16,7 +12,7 @@ import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @Slf4j
 public class StatsController {
@@ -31,7 +27,7 @@ public class StatsController {
     }
 
     @PostMapping("/hit")
-    public EndpointHitDto addHit(@RequestBody @Valid EndpointHitDto endpointHitDto) {
-        return service.addHit(endpointHitDto);
+    public void addHit(@RequestBody @Valid EndpointHitDto endpointHitDto) {
+        service.addHit(endpointHitDto);
     }
 }

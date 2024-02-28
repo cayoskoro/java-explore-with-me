@@ -33,9 +33,17 @@ public class StatsServiceImpl implements StatsService {
 
         Collection<Stats> statsCollection;
         if (unique) {
-            statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisInWithUniqueIp(start, end, uris);
+            if (uris != null) {
+                statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisInWithUniqueIp(start, end, uris);
+            } else {
+                statsCollection = statsRepository.findAllByTimestampBetweenDatesWithUniqueIp(start, end);
+            }
         } else {
-            statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisIn(start, end, uris);
+            if (uris != null) {
+                statsCollection = statsRepository.findAllByTimestampBetweenDatesAndUrisIn(start, end, uris);
+            } else {
+                statsCollection = statsRepository.findAllByTimestampBetweenDates(start, end);
+            }
         }
         return statsMapper.convertToViewDtoCollection(statsCollection);
     }

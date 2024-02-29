@@ -70,7 +70,7 @@ public class StatsClient {
         } catch (HttpStatusCodeException e) {
             ResponseEntity<Object> responseError = ResponseEntity.status(e.getStatusCode())
                     .body(e.getResponseBodyAsByteArray());
-            log.info("Запрос {} завершился с ошибкой: {} - {}", requestEntity, responseError,
+            log.error("Запрос {} завершился с ошибкой: {} - {}", requestEntity, responseError,
                     e.getResponseBodyAsString());
             return responseError;
         }
@@ -89,7 +89,7 @@ public class StatsClient {
             log.info("Получен успешный ответ: {}", response);
             return response;
         } else if (response.getStatusCode().isError()) {
-            log.info("Получен неуспешный ответ: {}", response);
+            log.error("Получен неуспешный ответ: {}", response);
         }
 
         ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());

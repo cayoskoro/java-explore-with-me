@@ -1,0 +1,29 @@
+package ru.practicum.controller.pub;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import ru.practicum.dto.CompilationDto;
+import ru.practicum.service.CompilationService;
+
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
+import java.util.Collection;
+
+@RestController
+@RequestMapping(path = "/compilations")
+@RequiredArgsConstructor
+public class CompilationPublicController {
+    private final CompilationService compilationService;
+
+    @GetMapping
+    public Collection<CompilationDto> getAllCompilations(@RequestParam(required = false) boolean pinned,
+                                                         @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+                                                         @RequestParam(defaultValue = "10") @Positive int size) {
+        return null;
+    }
+
+    @GetMapping("/{compId}")
+    public CompilationDto getCompilationById(@PathVariable long compId) {
+        return null;
+    }
+}

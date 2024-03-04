@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.model.ApiError;
+import ru.practicum.dto.ApiError;
 
 import javax.validation.ConstraintViolationException;
 import java.time.LocalDateTime;

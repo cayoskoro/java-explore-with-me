@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @Builder(toBuilder = true)
-public class NewUserRequest {
-    private final String name;
-    private final String email;
+public class Location {
+    private final Float lat;
+    private final Float lon;
 }

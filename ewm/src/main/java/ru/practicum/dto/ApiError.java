@@ -1,4 +1,4 @@
-package ru.practicum.model;
+package ru.practicum.dto;
 
 import lombok.Data;
 import org.springframework.http.HttpStatus;

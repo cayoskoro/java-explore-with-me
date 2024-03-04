@@ -19,34 +19,34 @@ public class EventPrivateController {
     public Collection<EventShortDto> getAllEvents(@PathVariable long userId,
                                                   @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                   @RequestParam(defaultValue = "10") @Positive int size) {
-        return null;
+        return eventService.getAllEvents(userId, from, size);
     }
 
     @PostMapping
     public EventFullDto addNewEvent(@PathVariable long userId, @RequestBody NewEventDto newEventDto) {
-        return null;
+        return eventService.addNewEvent(userId, newEventDto);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto getEventById(@PathVariable long userId, @PathVariable long eventId) {
-        return null;
+        return eventService.getEventById(userId, eventId);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto editEvent(@PathVariable long userId, @PathVariable long eventId,
                                   @RequestBody UpdateEventUserRequest updateEventUserRequest) {
-        return null;
+        return eventService.editEvent(userId, eventId, updateEventUserRequest);
     }
 
     @GetMapping("/{eventId}/requests")
     public Collection<ParticipationRequestDto> getEventRequestsById(@PathVariable long userId,
                                                                     @PathVariable long eventId) {
-        return null;
+        return eventService.getEventRequestsById(userId, eventId);
     }
 
     @PatchMapping("/{eventId}/requests")
     public EventRequestStatusUpdateResult editEventRequest(@PathVariable long userId, @PathVariable long eventId,
                                                            @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        return null;
+        return eventService.editEventRequest(userId, eventId, eventRequestStatusUpdateRequest);
     }
 }

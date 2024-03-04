@@ -15,16 +15,17 @@ public class CompilationAdminController {
 
     @PostMapping
     public CompilationDto addNewCompilation(@RequestBody NewCompilationDto newCompilationDto) {
-        return null;
+        return compilationService.addNewCompilation(newCompilationDto);
     }
 
     @DeleteMapping("/{compId}")
     public void deleteCompilation(@PathVariable long compId) {
+        compilationService.deleteCompilation(compId);
     }
 
     @PatchMapping("/{compId}")
     public CompilationDto editCompilation(@PathVariable long compId,
                                           @RequestBody UpdateCompilationRequest updateCompilationRequest) {
-        return null;
+        return compilationService.editCompilation(compId, updateCompilationRequest);
     }
 }

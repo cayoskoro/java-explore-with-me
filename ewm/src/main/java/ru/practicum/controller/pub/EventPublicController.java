@@ -27,11 +27,11 @@ public class EventPublicController {
                                                   @RequestParam(required = false) String sort,
                                                   @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                   @RequestParam(defaultValue = "10") @Positive int size) {
-        return null;
+        return eventService.getAllEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
     }
 
     @GetMapping("/{id}")
     public EventFullDto getEventById(@PathVariable long id) {
-        return null;
+        return eventService.getEventById(id);
     }
 }

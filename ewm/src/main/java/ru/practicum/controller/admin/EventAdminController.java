@@ -25,12 +25,12 @@ public class EventAdminController {
                                                  @RequestParam(required = false) LocalDateTime rangeEnd,
                                                  @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                  @RequestParam(defaultValue = "10") @Positive int size) {
-        return null;
+        return eventService.getAllEvents(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto editEvent(@PathVariable long eventId,
                                   @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
-        return null;
+        return eventService.editEvent(eventId, updateEventAdminRequest);
     }
 }

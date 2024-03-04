@@ -20,15 +20,16 @@ public class UserAdminController {
     public Collection<UserDto> getAllUsers(@RequestParam(required = false) Collection<Long> ids,
                                            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                            @RequestParam(defaultValue = "10") @Positive int size) {
-        return null;
+        return userService.getAllUsers(ids, from, size);
     }
 
     @PostMapping
     public UserDto addNewUser(@RequestBody NewUserRequest newUserRequest) {
-        return null;
+        return userService.addNewUser(newUserRequest);
     }
 
     @DeleteMapping("/{userId}")
     public void deleteUser(@PathVariable long userId) {
+        userService.deleteUser(userId);
     }
 }

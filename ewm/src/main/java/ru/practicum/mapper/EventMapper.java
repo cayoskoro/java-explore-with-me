@@ -11,8 +11,10 @@ import java.util.Collection;
 public interface EventMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "category.id", source = "category")
     void updateEventFromNewEventDto(NewEventDto dto, @MappingTarget Event event);
 
+    @Mapping(target = "category.id", source = "category")
     Event convertNewEventDtoToEntity(NewEventDto dto);
 
     EventFullDto convertToFullDto(Event entity);

@@ -1,5 +1,6 @@
 package ru.practicum.service.impl;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -10,16 +11,14 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.mapper.EventMapper;
 import ru.practicum.mapper.UserMapper;
-import ru.practicum.model.Category;
-import ru.practicum.model.Event;
-import ru.practicum.model.EventState;
-import ru.practicum.model.User;
+import ru.practicum.model.*;
 import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.service.EventService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 
 @Service
@@ -38,9 +37,27 @@ public class EventServiceImpl implements EventService {
     public Collection<EventFullDto> getAllEvents(Collection<Long> users, Collection<String> states,
                                                  Collection<Long> categories,
                                                  LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        QEvent qEvent = QEvent.event;
+        Collection<BooleanExpression> conditions = new ArrayList<>();
+        conditions.add(qEvent.initiator.id.in(users));
+//        conditions.add(qEvent.state.in(states));
+        conditions.add(qEvent.category.id.in(categories));
+        if (rangeStart != null) {
+            conditions.add(qEvent.eventDate.before(rangeStart));
+        }
+        if (rangeEnd != null) {
+            conditions.add(qEvent.eventDate.after(rangeEnd));
+        }
+        BooleanExpression commonCondition = conditions.stream()
+                .reduce(BooleanExpression::and)
+                .get();
 
-        return null;
+        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        Collection<EventFullDto> eventDtos = eventMapper.convertToFullDtoCollection(
+                eventRepository.findAll(commonCondition, page).getContent());
+        log.info("Запрос списка событий по users = {}, states = {}, categories = {}, rangeStart = {}, rangeEnd = {} " +
+                "- {}", users, states, categories, rangeStart, rangeEnd, eventDtos);
+        return eventDtos;
     }
 
     @Override

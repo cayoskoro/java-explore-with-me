@@ -4,6 +4,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.*;
@@ -64,9 +65,31 @@ public class EventServiceImpl implements EventService {
     public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, boolean paid,
                                                   LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                   boolean onlyAvailable, String sort, int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        LocalDateTime currentTime = LocalDateTime.now();
+        QEvent qEvent = QEvent.event;
+        Collection<BooleanExpression> conditions = new ArrayList<>();
+        conditions.add(qEvent.state.eq(EventState.PUBLISHED));
+        conditions.add(qEvent.annotation.likeIgnoreCase(text));
+        conditions.add(qEvent.description.likeIgnoreCase(text));
+        conditions.add(qEvent.category.id.in(categories));
+        conditions.add(qEvent.paid.eq(paid));
+        conditions.add(qEvent.eventDate.before(rangeStart != null ? rangeStart : currentTime));
+        if (rangeEnd != null) {
+            conditions.add(qEvent.eventDate.after(rangeEnd));
+        }
+//        conditions.add(qEvent.onlyAvailable.eq(onlyAvailable));
+        BooleanExpression commonCondition = conditions.stream()
+                .reduce(BooleanExpression::and)
+                .get();
 
-        return null;
+        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        Collection<EventShortDto> eventDtos = eventMapper.convertToShortDtoCollection(
+                eventRepository.findAll(commonCondition, page).getContent());
+//        makeSortCondition(sort);
+        log.info("Запрос списка событий по text = {}, categories = {}, paid = {}, rangeStart = {}, rangeEnd = {} " +
+                "onlyAvailable = {}, sort = {} - {}", text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort,
+                eventDtos);
+        return eventDtos;
     }
 
     @Override
@@ -142,6 +165,21 @@ public class EventServiceImpl implements EventService {
     public EventRequestStatusUpdateResult editEventRequest(long userId, long eventId,
                                                            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
         return null;
+    }
+
+    public enum EventSort {
+        EVENT_DATE, VIEWS
+    }
+
+    private Sort makeSortCondition(EventSort eventSort) {
+        switch (eventSort) {
+            case EVENT_DATE:
+                return Sort.by("eventDate").ascending();
+            case VIEWS:
+                return Sort.by("views").ascending();
+            default:
+                return Sort.by("eventDate").descending();
+        }
     }
 
     private Event getEventByIdOrElseThrow(long eventId) {

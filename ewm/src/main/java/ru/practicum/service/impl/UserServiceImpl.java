@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkUserIfExists(long userId) {
-        if (userRepository.existsById(userId)) {
+        if (!userRepository.existsById(userId)) {
             log.info("Пользователя по id = {} не существует", userId);
             throw new NotFoundException(String.format("Пользователя по id = %d не существует", userId));
         }

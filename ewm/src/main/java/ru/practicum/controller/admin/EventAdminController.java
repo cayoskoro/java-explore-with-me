@@ -6,6 +6,7 @@ import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.service.EventService;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ public class EventAdminController {
 
     @PatchMapping("/{eventId}")
     public EventFullDto editEvent(@PathVariable long eventId,
-                                  @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
+                                  @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest) {
         return eventService.editEvent(eventId, updateEventAdminRequest);
     }
 }

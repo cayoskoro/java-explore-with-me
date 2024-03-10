@@ -3,6 +3,8 @@ package ru.practicum.model;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.Collection;
+import java.util.Set;
 
 @Data
 @Builder(toBuilder = true)
@@ -19,7 +21,8 @@ public class Compilation {
     private String title;
     @Column(name = "pinned", nullable = false)
     private boolean pinned;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id")
-    private Event event;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "compilation_event",
+            joinColumns = @JoinColumn(name = "compilation_id"), inverseJoinColumns = @JoinColumn(name = "event_id"))
+    private Collection<Event> events;
 }

@@ -3,6 +3,7 @@ package ru.practicum.controller;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,70 +18,88 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFoundException(final NotFoundException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Not Found",
-                HttpStatus.NOT_FOUND,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Not Found")
+                .status(HttpStatus.NOT_FOUND)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleBadRequestException(final IllegalArgumentException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Bad Request",
-                HttpStatus.BAD_REQUEST,
-                LocalDateTime.now());
+    public ApiError handleIllegalArgumentException(final IllegalArgumentException e) {
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Bad Request")
+                .status(HttpStatus.BAD_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleIllegalStateException(final IllegalStateException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Illegal State",
-                HttpStatus.CONFLICT,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Illegal State")
+                .status(HttpStatus.CONFLICT)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleMethodArgumentNotValidException(final MethodArgumentNotValidException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Method Argument Not Valid",
-                HttpStatus.BAD_REQUEST,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Method Argument Not Valid")
+                .status(HttpStatus.BAD_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleMissingServletRequestParameterException(final MissingServletRequestParameterException e) {
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason(e.getParameterType() + " " + e.getParameterName())
+                .status(HttpStatus.BAD_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleConstraintViolationException(final ConstraintViolationException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Constraint Violation",
-                HttpStatus.BAD_REQUEST,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Constraint Violation")
+                .status(HttpStatus.BAD_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDbConstraintViolationException(final DataIntegrityViolationException e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "DB Constraint Violation",
-                HttpStatus.CONFLICT,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("DB Constraint Violation")
+                .status(HttpStatus.CONFLICT)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiError handleServerError(final Throwable e) {
-        return new ApiError(e.getStackTrace(),
-                e.getMessage(),
-                "Internal Server Error",
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                LocalDateTime.now());
+        return ApiError.builder()
+                .message(e.getMessage())
+                .reason("Internal Server Error")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }

@@ -71,7 +71,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private void checkCategoryIfExists(long catId) {
-        if (categoryRepository.existsById(catId)) {
+        if (!categoryRepository.existsById(catId)) {
             log.info("Категории по id = {} не существует", catId);
             throw new NotFoundException(String.format("Категории по id = %d не существует", catId));
         }

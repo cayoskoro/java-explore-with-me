@@ -12,7 +12,12 @@ public interface EventMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category.id", source = "category")
-    void updateEventFromNewEventDto(NewEventDto dto, @MappingTarget Event event);
+    void updateEventFromEventUserRequest(UpdateEventUserRequest dto, @MappingTarget Event event);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "category.id", source = "category")
+    void updateEventFromEventAdminRequest(UpdateEventAdminRequest dto, @MappingTarget Event event);
 
     @Mapping(target = "category.id", source = "category")
     Event convertNewEventDtoToEntity(NewEventDto dto);

@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.ParticipationRequestDto;
+import ru.practicum.mapper.RequestMapper;
+import ru.practicum.repository.RequestRepository;
 import ru.practicum.service.RequestService;
 
 import java.util.Collection;
@@ -14,6 +16,9 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Slf4j
 public class RequestServiceImpl implements RequestService {
+    private final RequestMapper requestMapper;
+    private final RequestRepository requestRepository;
+
     @Override
     public Collection<ParticipationRequestDto> getAllRequests(long userId) {
         return null;

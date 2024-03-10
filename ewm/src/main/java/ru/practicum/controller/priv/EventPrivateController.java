@@ -1,16 +1,19 @@
 package ru.practicum.controller.priv;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.*;
 import ru.practicum.service.EventService;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.Collection;
 
 @RestController
 @RequestMapping(path = "/users/{userId}/events")
+@Validated
 @RequiredArgsConstructor
 public class EventPrivateController {
     private final EventService eventService;
@@ -23,7 +26,7 @@ public class EventPrivateController {
     }
 
     @PostMapping
-    public EventFullDto addNewEvent(@PathVariable long userId, @RequestBody NewEventDto newEventDto) {
+    public EventFullDto addNewEvent(@PathVariable long userId, @RequestBody @Valid NewEventDto newEventDto) {
         return eventService.addNewEvent(userId, newEventDto);
     }
 
@@ -34,7 +37,7 @@ public class EventPrivateController {
 
     @PatchMapping("/{eventId}")
     public EventFullDto editEvent(@PathVariable long userId, @PathVariable long eventId,
-                                  @RequestBody UpdateEventUserRequest updateEventUserRequest) {
+                                  @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest) {
         return eventService.editEvent(userId, eventId, updateEventUserRequest);
     }
 
@@ -46,7 +49,7 @@ public class EventPrivateController {
 
     @PatchMapping("/{eventId}/requests")
     public EventRequestStatusUpdateResult editEventRequest(@PathVariable long userId, @PathVariable long eventId,
-                                                           @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+                                                           @RequestBody @Valid EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
         return eventService.editEventRequest(userId, eventId, eventRequestStatusUpdateRequest);
     }
 }

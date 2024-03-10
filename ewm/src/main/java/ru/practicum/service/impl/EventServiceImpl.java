@@ -69,9 +69,12 @@ public class EventServiceImpl implements EventService {
         QEvent qEvent = QEvent.event;
         Collection<BooleanExpression> conditions = new ArrayList<>();
         conditions.add(qEvent.state.eq(EventState.PUBLISHED));
-        conditions.add(qEvent.annotation.likeIgnoreCase(text));
-        conditions.add(qEvent.description.likeIgnoreCase(text));
-        conditions.add(qEvent.category.id.in(categories));
+        if (text != null) {
+            conditions.add(qEvent.annotation.likeIgnoreCase(text).or(qEvent.description.likeIgnoreCase(text)));
+        }
+        if (categories != null) {
+            conditions.add(qEvent.category.id.in(categories));
+        }
         conditions.add(qEvent.paid.eq(paid));
         conditions.add(qEvent.eventDate.before(rangeStart != null ? rangeStart : currentTime));
         if (rangeEnd != null) {
@@ -151,13 +154,53 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto editEvent(long userId, long eventId, UpdateEventUserRequest updateEventUserRequest) {
-        return null;
+        checkUserIfExists(userId);
+        Event event = getEventByIdOrElseThrow(eventId);
+
+        if (!event.getState().equals(EventState.CANCELED) && !event.isRequestModeration()) {
+            log.info("Событие не соответствует правилам для изменения: " +
+                    "Статус отмененный <> {} или в состоянии ожидания модерации <> {}", event.getState(),
+                    event.isRequestModeration());
+            throw new IllegalStateException("Only pending or canceled events can be changed");
+        }
+
+        LocalDateTime currentTime = LocalDateTime.now();
+        if (currentTime.plusHours(2).isBefore(updateEventUserRequest.getEventDate())) {
+            log.info("Дата события должна быть запланирована за два часа до настоящего момента");
+            throw new IllegalArgumentException();
+        }
+
+        Event updatingEvent = eventMapper.clone(event);
+        eventMapper.updateEventFromEventUserRequest(updateEventUserRequest, updatingEvent);
+        log.info("Событие подготовлено к обновлению - {}", updatingEvent);
+        return eventMapper.convertToFullDto(eventRepository.save(updatingEvent));
     }
 
     @Override
     @Transactional
     public EventFullDto editEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
-        return null;
+        Event event = getEventByIdOrElseThrow(eventId);
+
+        LocalDateTime currentTime = LocalDateTime.now();
+        if (currentTime.plusHours(1).isBefore(updateEventAdminRequest.getEventDate())) {
+            log.info("Дата события должна быть запланирована за час до настоящего момента");
+            throw new IllegalArgumentException();
+        }
+
+        UpdateEventAdminRequest.StateAction stateAction = updateEventAdminRequest.getStateAction();
+        if (stateAction.equals(UpdateEventAdminRequest.StateAction.PUBLISH_EVENT)
+                && !event.getState().equals(EventState.PENDING)
+                || stateAction.equals(UpdateEventAdminRequest.StateAction.REJECT_EVENT)
+                && !event.getState().equals(EventState.PUBLISHED)) {
+            log.info("Событие не соответствует правилам для изменения: stateAction = {}, eventState = {}",
+                    stateAction, event.getState());
+            throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
+        }
+
+        Event updatingEvent = eventMapper.clone(event);
+        eventMapper.updateEventFromEventAdminRequest(updateEventAdminRequest, updatingEvent);
+        log.info("Событие подготовлено к обновлению - {}", updatingEvent);
+        return eventMapper.convertToFullDto(eventRepository.save(updatingEvent));
     }
 
     @Override
@@ -167,7 +210,7 @@ public class EventServiceImpl implements EventService {
         return null;
     }
 
-    public enum EventSort {
+    private enum EventSort {
         EVENT_DATE, VIEWS
     }
 
@@ -191,7 +234,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private void checkUserIfExists(long userId) {
-        if (userRepository.existsById(userId)) {
+        if (!userRepository.existsById(userId)) {
             log.info("Пользователя по id = {} не существует", userId);
             throw new NotFoundException(String.format("Пользователя по id = %d не существует", userId));
         }

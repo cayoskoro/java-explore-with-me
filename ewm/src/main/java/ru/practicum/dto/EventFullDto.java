@@ -17,6 +17,8 @@ public class EventFullDto {
     private final boolean paid;
     private final LocalDateTime eventDate;
     private final UserShortDto initiator;
+    private final Long confirmedRequests;
+    private final Long views;
     private final String description;
     private final Integer participantLimit;
     private final EventState state;
@@ -24,6 +26,4 @@ public class EventFullDto {
     private final boolean requestModeration;
     private final Location location;
     private final LocalDateTime publishedOn;
-    private final Long confirmedRequests;
-    private final Long views;
 }

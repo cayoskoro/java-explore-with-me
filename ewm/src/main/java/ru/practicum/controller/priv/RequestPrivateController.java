@@ -19,12 +19,14 @@ public class RequestPrivateController {
     }
 
     @PostMapping
-    public ParticipationRequestDto addNewRequest(@PathVariable long userId, @RequestParam long eventId) {
+    public ParticipationRequestDto addNewRequest(@PathVariable long userId,
+                                                 @RequestParam long eventId) {
         return requestService.addNewRequest(userId, eventId);
     }
 
     @PatchMapping("/{requestId}/cancel")
-    public ParticipationRequestDto cancelRequest(@PathVariable long userId, @PathVariable long requestId) {
+    public ParticipationRequestDto cancelRequest(@PathVariable long userId,
+                                                 @PathVariable long requestId) {
         return requestService.cancelRequest(userId, requestId);
     }
 }

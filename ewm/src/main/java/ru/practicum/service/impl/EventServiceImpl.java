@@ -115,7 +115,7 @@ public class EventServiceImpl implements EventService {
         Event event = getEventByIdOrElseThrow(id);
         if (!event.getState().equals(EventState.PUBLISHED)) {
             log.info("Событие не является опубликованным");
-            throw new IllegalStateException("Событие не является опубликованным");
+            throw new NotFoundException("Событие не является опубликованным");
         }
         EventFullDto eventDto = eventMapper.convertToFullDto(event);
         log.info("Запрошено событие по id = {} - {}", id, eventDto);
@@ -135,17 +135,19 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto addNewEvent(long userId, NewEventDto newEventDto) {
         LocalDateTime currentTime = LocalDateTime.now();
-        if (currentTime.plusHours(2).isBefore(newEventDto.getEventDate())) {
-            log.info("Дата события должна быть запланирована за два часа до настоящего момента");
+        if (!currentTime.plusHours(2).isBefore(newEventDto.getEventDate())) {
+            log.info("Дата события должна быть запланирована за два часа до настоящего момента" +
+                    " currentTime = {}, eventDate = {}", currentTime, newEventDto.getEventDate());
             throw new IllegalArgumentException();
         }
 
         User user = getUserByIdOrElseThrow(userId);
         Category category = getCategoryByIdOrElseThrow(newEventDto.getCategory());
         Event event = eventMapper.convertNewEventDtoToEntity(newEventDto);
-        event.setEventDate(currentTime);
+        event.setCreatedOn(currentTime);
         event.setInitiator(user);
         event.setCategory(category);
+        event.setState(EventState.PENDING);
         EventFullDto eventDto = eventMapper.convertToFullDto(eventRepository.save(event));
         log.info("Добавлено новое событие - {}", eventDto);
         return eventDto;
@@ -165,7 +167,8 @@ public class EventServiceImpl implements EventService {
         }
 
         LocalDateTime currentTime = LocalDateTime.now();
-        if (currentTime.plusHours(2).isBefore(updateEventUserRequest.getEventDate())) {
+        if (updateEventUserRequest.getEventDate() != null && !currentTime.plusHours(2).isBefore(
+                updateEventUserRequest.getEventDate())) {
             log.info("Дата события должна быть запланирована за два часа до настоящего момента");
             throw new IllegalArgumentException();
         }
@@ -182,7 +185,8 @@ public class EventServiceImpl implements EventService {
         Event event = getEventByIdOrElseThrow(eventId);
 
         LocalDateTime currentTime = LocalDateTime.now();
-        if (currentTime.plusHours(1).isBefore(updateEventAdminRequest.getEventDate())) {
+        if (updateEventAdminRequest.getEventDate() != null && !currentTime.plusHours(1).isBefore(
+                updateEventAdminRequest.getEventDate())) {
             log.info("Дата события должна быть запланирована за час до настоящего момента");
             throw new IllegalArgumentException();
         }

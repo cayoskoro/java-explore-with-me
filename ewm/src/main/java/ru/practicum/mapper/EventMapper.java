@@ -20,6 +20,8 @@ public interface EventMapper {
     void updateEventFromEventAdminRequest(UpdateEventAdminRequest dto, @MappingTarget Event event);
 
     @Mapping(target = "category.id", source = "category")
+    @Mapping(target = "latitude", source = "location.lat")
+    @Mapping(target = "longitude", source = "location.lon")
     Event convertNewEventDtoToEntity(NewEventDto dto);
 
     EventFullDto convertToFullDto(Event entity);

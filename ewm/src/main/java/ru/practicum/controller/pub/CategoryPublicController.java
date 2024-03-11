@@ -1,6 +1,7 @@
 package ru.practicum.controller.pub;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.CategoryDto;
 import ru.practicum.service.CategoryService;
@@ -12,6 +13,7 @@ import java.util.Collection;
 @RestController
 @RequestMapping(path = "/categories")
 @RequiredArgsConstructor
+@Validated
 public class CategoryPublicController {
     private final CategoryService categoryService;
 

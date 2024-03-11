@@ -2,6 +2,7 @@ package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +27,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Collection<UserDto> getAllUsers(Collection<Long> ids, int from, int size) {
         PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
-        Collection<UserDto> userDtos = userMapper.convertToDtoCollection(userRepository.findByIdIn(ids, page)
-                .getContent());
+        Page<User> userPage = ids == null ? userRepository.findAll(page) : userRepository.findByIdIn(ids, page);
+        Collection<UserDto> userDtos = userMapper.convertToDtoCollection(userPage.getContent());
         log.info("Запрос списка пользователей из ids = {} - {}", ids, userDtos);
         return userDtos;
     }

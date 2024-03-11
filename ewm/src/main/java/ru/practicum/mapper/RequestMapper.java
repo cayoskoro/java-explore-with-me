@@ -15,6 +15,10 @@ public interface RequestMapper {
     @Mapping(target = "requester.id", source = "requester")
     void updateRequestFromParticipationRequestDto(ParticipationRequestDto dto, @MappingTarget Request request);
 
+    @Mapping(target = "event.id", source = "event")
+    @Mapping(target = "requester.id", source = "requester")
+    Request convertParticipationRequestDtoToEntity(ParticipationRequestDto dto);
+
     @Mapping(target = "event", source = "event.id")
     @Mapping(target = "requester", source = "requester.id")
     ParticipationRequestDto convertToParticipationRequestDto(Request entity);

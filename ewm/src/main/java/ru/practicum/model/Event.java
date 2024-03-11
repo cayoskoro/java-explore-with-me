@@ -45,4 +45,6 @@ public class Event {
     private Float longitude;
     @Column(name = "request_moderation")
     private boolean requestModeration;
+    @Column(name = "confirmed_requests")
+    private Long confirmedRequests;
 }

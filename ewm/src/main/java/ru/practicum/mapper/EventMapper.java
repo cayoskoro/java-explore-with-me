@@ -24,8 +24,10 @@ public interface EventMapper {
     @Mapping(target = "longitude", source = "location.lon")
     Event convertNewEventDtoToEntity(NewEventDto dto);
 
+    @Mapping(target = "confirmedRequests", ignore = true)
     EventFullDto convertToFullDto(Event entity);
 
+    @Mapping(target = "confirmedRequests", ignore = true)
     EventShortDto convertToShortDto(Event entity);
 
     Collection<EventFullDto> convertToFullDtoCollection(Collection<Event> entities);

@@ -7,4 +7,6 @@ import java.util.Collection;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
     public Collection<Request> findAllByRequesterId(long userId);
+
+    public Request findByRequesterIdAndEventId(long userId, long eventId);
 }

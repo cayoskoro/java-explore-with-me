@@ -9,14 +9,13 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
 import ru.practicum.mapper.RequestMapper;
 import ru.practicum.mapper.UserMapper;
-import ru.practicum.model.Event;
-import ru.practicum.model.Request;
-import ru.practicum.model.User;
+import ru.practicum.model.*;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.RequestRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.service.RequestService;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 @Service
@@ -25,8 +24,6 @@ import java.util.Collection;
 @Slf4j
 public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
-    private final EventMapper eventMapper;
-    private final UserMapper userMapper;
     private final RequestRepository requestRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -48,17 +45,76 @@ public class RequestServiceImpl implements RequestService {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
 
-        if (event.getInitiator().getId().equals(user.getId())) {
-            throw new
+        if (requestRepository.findByRequesterIdAndEventId(userId, eventId) != null) {
+            log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", userId, eventId);
+            throw new IllegalStateException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
+                    userId, eventId));
         }
 
-        return null;
+        if (event.getInitiator().getId().equals(user.getId())) {
+            log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
+                    userId, eventId);
+            throw new IllegalStateException(String.format("Инициатор события по id = %d не может добавить запрос" +
+                    " на участие в своём событии по id = %d", userId, eventId));
+        }
+
+        if (!event.getState().equals(EventState.PUBLISHED)) {
+            log.info("Нельзя участвовать в неопубликованном событии - {}", event);
+            throw new IllegalStateException("Нельзя участвовать в неопубликованном событии - " + event);
+        }
+
+        if (event.getParticipantLimit() != 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+            log.info("Достигнут лимит запросов на участие participantLimit = {}", event.getParticipantLimit());
+            throw new IllegalStateException("Достигнут лимит запросов на участие participantLimit = " +
+                    event.getParticipantLimit());
+        }
+
+        Request request = Request.builder()
+                .event(event)
+                .requester(user)
+                .status(event.isRequestModeration() ? RequestStatus.REJECTED : RequestStatus.CONFIRMED)
+                .created(LocalDateTime.now())
+                .build();
+
+        ParticipationRequestDto participationRequestDto = requestMapper.convertToParticipationRequestDto(
+                requestRepository.save(request));
+        log.info("Добавлен запрос на участие в событии - {}", participationRequestDto);
+        return participationRequestDto;
     }
 
     @Override
     @Transactional
     public ParticipationRequestDto cancelRequest(long userId, long requestId) {
-        return null;
+        checkUserIfExists(userId);
+        Request request = getRequestByIdOrElseThrow(requestId);
+
+        if (!request.getRequester().getId().equals(userId)) {
+            log.info("Пользователь по id = {} не является владельцем запроса по id = {}, " +
+                    "следовательно, отмена невозможна", userId, requestId);
+            throw new IllegalStateException(String.format("Пользователь по id = %d не является владельцем " +
+                    "запроса по id = %d, следовательно, отмена невозможна", userId, requestId));
+        }
+
+        if (request.getStatus() == RequestStatus.CONFIRMED) {
+            Event event = request.getEvent();
+            event.setConfirmedRequests(event.getConfirmedRequests() - 1);
+            eventRepository.save(event);
+            log.info("Количество подтвержденных запросов на участие для события по id = {} " +
+                    "уменьшилось после отмены запроса на участие по id = {}", event.getId(), requestId);
+        }
+
+        request.setStatus(RequestStatus.CANCELED);
+        log.info("Запрос на участие после изменения статуса на CANCELED подготовлен к обновлению - {}", request);
+        return requestMapper.convertToParticipationRequestDto(requestRepository.save(request));
+    }
+
+    private Request getRequestByIdOrElseThrow(long requestId) {
+        return requestRepository.findById(requestId)
+                .orElseThrow(() -> {
+                    log.info("Запроса на участие по id = {} не существует", requestId);
+                    return new NotFoundException(String.format("Запроса на участие по id = %d не существует",
+                            requestId));
+                });
     }
 
     private Event getEventByIdOrElseThrow(long eventId) {

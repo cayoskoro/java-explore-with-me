@@ -1,6 +1,7 @@
 package ru.practicum.event.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
@@ -21,8 +22,8 @@ public class EventPublicController {
     public Collection<EventShortDto> getAllEvents(@RequestParam(required = false) String text,
                                                   @RequestParam(required = false) Collection<Long> categories,
                                                   @RequestParam(required = false) boolean paid,
-                                                  @RequestParam(required = false) LocalDateTime rangeStart,
-                                                  @RequestParam(required = false) LocalDateTime rangeEnd,
+                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                                   @RequestParam(required = false) boolean onlyAvailable,
                                                   @RequestParam(required = false) String sort,
                                                   @RequestParam(defaultValue = "0") @PositiveOrZero int from,

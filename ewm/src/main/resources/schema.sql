@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS events (
     created_on TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     latitude FLOAT NOT NULL,
     longitude FLOAT NOT NULL,
+    published_on TIMESTAMP WITHOUT TIME ZONE,
     request_moderation BOOLEAN DEFAULT TRUE,
-    confirmed_requests BIGINT DEFAULT 0
+    confirmed_requests INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS compilations (

@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
-    private final UserMapper userMapper;
-    private final CategoryMapper categoryMapper;
     private final RequestMapper requestMapper;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -52,14 +50,20 @@ public class EventServiceImpl implements EventService {
                                                  LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         QEvent qEvent = QEvent.event;
         Collection<BooleanExpression> conditions = new ArrayList<>();
-        conditions.add(qEvent.initiator.id.in(users));
-//        conditions.add(qEvent.state.in(states));
-        conditions.add(qEvent.category.id.in(categories));
+        if (users != null && !users.isEmpty()) {
+            conditions.add(qEvent.initiator.id.in(users));
+        }
+        if (states != null && !states.isEmpty()) {
+            conditions.add(qEvent.state.stringValue().in(states));
+        }
+        if (categories != null && !categories.isEmpty()) {
+            conditions.add(qEvent.category.id.in(categories));
+        }
         if (rangeStart != null) {
-            conditions.add(qEvent.eventDate.before(rangeStart));
+            conditions.add(qEvent.eventDate.after(rangeStart));
         }
         if (rangeEnd != null) {
-            conditions.add(qEvent.eventDate.after(rangeEnd));
+            conditions.add(qEvent.eventDate.before(rangeEnd));
         }
         BooleanExpression commonCondition = conditions.stream()
                 .reduce(BooleanExpression::and)
@@ -68,8 +72,9 @@ public class EventServiceImpl implements EventService {
         PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
         Collection<EventFullDto> eventDtos = eventMapper.convertToFullDtoCollection(
                 eventRepository.findAll(commonCondition, page).getContent());
-        log.info("Запрос списка событий по users = {}, states = {}, categories = {}, rangeStart = {}, rangeEnd = {} " +
-                "- {}", users, states, categories, rangeStart, rangeEnd, eventDtos);
+        log.info("Запрос списка событий по commonCondition = {}, users = {}, states = {}, categories = {}, " +
+                "rangeStart = {}, rangeEnd = {} " + "- {}", commonCondition, users, states, categories,
+                rangeStart, rangeEnd, eventDtos);
         return eventDtos;
     }
 
@@ -84,13 +89,13 @@ public class EventServiceImpl implements EventService {
         if (text != null) {
             conditions.add(qEvent.annotation.likeIgnoreCase(text).or(qEvent.description.likeIgnoreCase(text)));
         }
-        if (categories != null) {
+        if (categories != null && !categories.isEmpty()) {
             conditions.add(qEvent.category.id.in(categories));
         }
         conditions.add(qEvent.paid.eq(paid));
-        conditions.add(qEvent.eventDate.before(rangeStart != null ? rangeStart : currentTime));
+        conditions.add(qEvent.eventDate.after(rangeStart != null ? rangeStart : currentTime));
         if (rangeEnd != null) {
-            conditions.add(qEvent.eventDate.after(rangeEnd));
+            conditions.add(qEvent.eventDate.before(rangeEnd));
         }
 //        conditions.add(qEvent.onlyAvailable.eq(onlyAvailable));
         BooleanExpression commonCondition = conditions.stream()
@@ -159,6 +164,7 @@ public class EventServiceImpl implements EventService {
         event.setCreatedOn(currentTime);
         event.setInitiator(user);
         event.setCategory(category);
+        event.setConfirmedRequests(0);
         log.info("event = {}", event);
         EventFullDto eventDto = eventMapper.convertToFullDto(eventRepository.save(event));
         log.info("Добавлено новое событие - {}", eventDto);
@@ -212,6 +218,15 @@ public class EventServiceImpl implements EventService {
                     stateAction, event.getState());
             throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
         }
+        switch (stateAction) {
+            case PUBLISH_EVENT:
+                event.setState(EventState.PUBLISHED);
+                event.setPublishedOn(currentTime);
+                break;
+            case REJECT_EVENT:
+                event.setState(EventState.CANCELED);
+                break;
+        }
 
         Event updatingEvent = eventMapper.clone(event);
         eventMapper.updateEventFromEventAdminRequest(updateEventAdminRequest, updatingEvent);
@@ -239,7 +254,7 @@ public class EventServiceImpl implements EventService {
 
         Collection<Request> confirmedRequests = new ArrayList<>();
         Collection<Request> rejectedRequests = new ArrayList<>();
-        Long countConfirmedRequests = event.getConfirmedRequests();
+        Integer countConfirmedRequests = event.getConfirmedRequests();
         switch (eventRequestStatusUpdateRequest.getStatus()) {
             case CONFIRMED:
                 if (event.getParticipantLimit() != 0 && countConfirmedRequests >= event.getParticipantLimit()) {

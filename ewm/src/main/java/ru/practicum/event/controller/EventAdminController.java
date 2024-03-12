@@ -1,6 +1,8 @@
 package ru.practicum.event.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
@@ -14,6 +16,7 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping(path = "/admin/events")
+@Validated
 @RequiredArgsConstructor
 public class EventAdminController {
     private final EventService eventService;
@@ -22,8 +25,8 @@ public class EventAdminController {
     public Collection<EventFullDto> getAllEvents(@RequestParam(required = false) Collection<Long> users,
                                                  @RequestParam(required = false) Collection<String> states,
                                                  @RequestParam(required = false) Collection<Long> categories,
-                                                 @RequestParam(required = false) LocalDateTime rangeStart,
-                                                 @RequestParam(required = false) LocalDateTime rangeEnd,
+                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                                  @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                  @RequestParam(defaultValue = "10") @Positive int size) {
         return eventService.getAllEvents(users, states, categories, rangeStart, rangeEnd, from, size);

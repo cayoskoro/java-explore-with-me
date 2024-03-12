@@ -41,6 +41,8 @@ public class Event {
     private EventState state;
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;
+    @Column(name = "published_on")
+    private LocalDateTime publishedOn;
     @Column(name = "latitude", nullable = false)
     private Float latitude;
     @Column(name = "longitude", nullable = false)
@@ -48,5 +50,5 @@ public class Event {
     @Column(name = "request_moderation")
     private boolean requestModeration;
     @Column(name = "confirmed_requests")
-    private Long confirmedRequests;
+    private Integer confirmedRequests;
 }

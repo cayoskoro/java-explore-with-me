@@ -27,9 +27,11 @@ import ru.practicum.user.repository.UserRepository;
 import ru.practicum.event.service.EventService;
 import ru.practicum.user.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,6 +51,11 @@ public class EventServiceImpl implements EventService {
                                                  Collection<Long> categories,
                                                  LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         QEvent qEvent = QEvent.event;
+        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+            log.info("Дата rangeStart = {} позже rangeEnd = {}", rangeStart, rangeEnd);
+            throw new IllegalArgumentException(String.format("Дата rangeStart = %s позже rangeEnd = %s",
+                    rangeStart, rangeEnd));
+        }
         Collection<BooleanExpression> conditions = new ArrayList<>();
         if (users != null && !users.isEmpty()) {
             conditions.add(qEvent.initiator.id.in(users));
@@ -65,13 +72,17 @@ public class EventServiceImpl implements EventService {
         if (rangeEnd != null) {
             conditions.add(qEvent.eventDate.before(rangeEnd));
         }
-        BooleanExpression commonCondition = conditions.stream()
-                .reduce(BooleanExpression::and)
-                .get();
 
         PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
-        Collection<EventFullDto> eventDtos = eventMapper.convertToFullDtoCollection(
-                eventRepository.findAll(commonCondition, page).getContent());
+        Optional<BooleanExpression> commonCondition = conditions.stream()
+                .reduce(BooleanExpression::and);
+        Collection<Event> events;
+        if (commonCondition.isPresent()) {
+            events = eventRepository.findAll(commonCondition.get(), page).getContent();
+        } else {
+            events = eventRepository.findAll(page).getContent();
+        }
+        Collection<EventFullDto> eventDtos = eventMapper.convertToFullDtoCollection(events);
         log.info("Запрос списка событий по commonCondition = {}, users = {}, states = {}, categories = {}, " +
                 "rangeStart = {}, rangeEnd = {} " + "- {}", commonCondition, users, states, categories,
                 rangeStart, rangeEnd, eventDtos);
@@ -81,8 +92,14 @@ public class EventServiceImpl implements EventService {
     @Override
     public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, boolean paid,
                                                   LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                                  boolean onlyAvailable, String sort, int from, int size) {
+                                                  boolean onlyAvailable, String sort, int from, int size,
+                                                  HttpServletRequest request) {
         LocalDateTime currentTime = LocalDateTime.now();
+        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+            log.info("Дата rangeStart = {} позже rangeEnd = {}", rangeStart, rangeEnd);
+            throw new IllegalArgumentException(String.format("Дата rangeStart = %s позже rangeEnd = %s",
+                    rangeStart, rangeEnd));
+        }
         QEvent qEvent = QEvent.event;
         Collection<BooleanExpression> conditions = new ArrayList<>();
         conditions.add(qEvent.state.eq(EventState.PUBLISHED));
@@ -124,11 +141,18 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Collection<ParticipationRequestDto> getEventRequestsById(long userId, long eventId) {
-        return null;
+        User user = getUserByIdOrElseThrow(userId);
+        Event event = getEventByIdOrElseThrow(eventId);
+        checkEventInitiator(user, event);
+
+        Collection<ParticipationRequestDto> participationRequestDtos = requestMapper
+                .convertToParticipationRequestDtoCollection(requestRepository.findAllByEventId(eventId));
+        log.info("Запрос списка запросов на участие в событии по id = {} - {}", eventId, participationRequestDtos);
+        return participationRequestDtos;
     }
 
     @Override
-    public EventFullDto getEventById(long id) {
+    public EventFullDto getEventById(long id, HttpServletRequest request) {
         Event event = getEventByIdOrElseThrow(id);
         if (!event.getState().equals(EventState.PUBLISHED)) {
             log.info("Событие не является опубликованным");
@@ -206,26 +230,28 @@ public class EventServiceImpl implements EventService {
         if (updateEventAdminRequest.getEventDate() != null && !currentTime.plusHours(1).isBefore(
                 updateEventAdminRequest.getEventDate())) {
             log.info("Дата события должна быть запланирована за час до настоящего момента");
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Дата события должна быть запланирована за час до настоящего момента");
         }
 
         UpdateEventAdminRequest.StateAction stateAction = updateEventAdminRequest.getStateAction();
-        if (stateAction.equals(UpdateEventAdminRequest.StateAction.PUBLISH_EVENT)
-                && !event.getState().equals(EventState.PENDING)
-                || stateAction.equals(UpdateEventAdminRequest.StateAction.REJECT_EVENT)
-                && !event.getState().equals(EventState.PUBLISHED)) {
-            log.info("Событие не соответствует правилам для изменения: stateAction = {}, eventState = {}",
-                    stateAction, event.getState());
-            throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
-        }
-        switch (stateAction) {
-            case PUBLISH_EVENT:
-                event.setState(EventState.PUBLISHED);
-                event.setPublishedOn(currentTime);
-                break;
-            case REJECT_EVENT:
-                event.setState(EventState.CANCELED);
-                break;
+        if (stateAction != null) {
+            if (stateAction.equals(UpdateEventAdminRequest.StateAction.PUBLISH_EVENT)
+                    && !event.getState().equals(EventState.PENDING)
+                    || stateAction.equals(UpdateEventAdminRequest.StateAction.REJECT_EVENT)
+                    && !event.getState().equals(EventState.PUBLISHED)) {
+                log.info("Событие не соответствует правилам для изменения: stateAction = {}, eventState = {}",
+                        stateAction, event.getState());
+                throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
+            }
+            switch (stateAction) {
+                case PUBLISH_EVENT:
+                    event.setState(EventState.PUBLISHED);
+                    event.setPublishedOn(currentTime);
+                    break;
+                case REJECT_EVENT:
+                    event.setState(EventState.CANCELED);
+                    break;
+            }
         }
 
         Event updatingEvent = eventMapper.clone(event);

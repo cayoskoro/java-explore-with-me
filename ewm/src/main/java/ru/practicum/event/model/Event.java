@@ -51,4 +51,6 @@ public class Event {
     private boolean requestModeration;
     @Column(name = "confirmed_requests")
     private Integer confirmedRequests;
+    @Column(name = "views")
+    private Long views;
 }

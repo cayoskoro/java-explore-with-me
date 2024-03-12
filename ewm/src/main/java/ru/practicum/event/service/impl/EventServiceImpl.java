@@ -1,25 +1,29 @@
 package ru.practicum.event.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
+import ru.practicum.client.StatsClient;
+import ru.practicum.dto.EndpointHitDto;
+import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.event.dto.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.category.mapper.CategoryMapper;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.QEvent;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
 import ru.practicum.request.model.RequestStatus;
-import ru.practicum.user.mapper.UserMapper;
 import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.event.repository.EventRepository;
 import ru.practicum.request.repository.RequestRepository;
@@ -29,9 +33,9 @@ import ru.practicum.user.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,12 +43,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class EventServiceImpl implements EventService {
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final EventMapper eventMapper;
     private final RequestMapper requestMapper;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
+    private final StatsClient statsClient;
 
     @Override
     public Collection<EventFullDto> getAllEvents(Collection<Long> users, Collection<String> states,
@@ -100,6 +106,8 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException(String.format("Дата rangeStart = %s позже rangeEnd = %s",
                     rangeStart, rangeEnd));
         }
+
+        addStats(request);
         QEvent qEvent = QEvent.event;
         Collection<BooleanExpression> conditions = new ArrayList<>();
         conditions.add(qEvent.state.eq(EventState.PUBLISHED));
@@ -114,15 +122,27 @@ public class EventServiceImpl implements EventService {
         if (rangeEnd != null) {
             conditions.add(qEvent.eventDate.before(rangeEnd));
         }
-//        conditions.add(qEvent.onlyAvailable.eq(onlyAvailable));
+        if (onlyAvailable) {
+            conditions.add(qEvent.participantLimit.eq(0)
+                    .or(qEvent.confirmedRequests.loe(qEvent.participantLimit)));
+        }
         BooleanExpression commonCondition = conditions.stream()
                 .reduce(BooleanExpression::and)
                 .get();
 
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
-        Collection<EventShortDto> eventDtos = eventMapper.convertToShortDtoCollection(
-                eventRepository.findAll(commonCondition, page).getContent());
-//        makeSortCondition(sort);
+        PageRequest page;
+        if (sort != null) {
+            page = PageRequest.of(from > 0 ? from / size : 0, size,
+                    makeSortCondition(EventSort.valueOf(sort)));
+        } else {
+            page = PageRequest.of(from > 0 ? from / size : 0, size);
+        }
+
+        Collection<Event> events = eventRepository.findAll(commonCondition, page).getContent();
+        Map<Long, Long> eventViews = getEventViews(events);
+        events.forEach(it -> it.setViews(eventViews.getOrDefault(it.getId(), 0L)));
+
+        Collection<EventShortDto> eventDtos = eventMapper.convertToShortDtoCollection(events);
         log.info("Запрос списка событий по text = {}, categories = {}, paid = {}, rangeStart = {}, rangeEnd = {} " +
                 "onlyAvailable = {}, sort = {} - {}", text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort,
                 eventDtos);
@@ -158,6 +178,11 @@ public class EventServiceImpl implements EventService {
             log.info("Событие не является опубликованным");
             throw new NotFoundException("Событие не является опубликованным");
         }
+
+        addStats(request);
+        Map<Long, Long> eventViews = getEventViews(List.of(event));
+        event.setViews(eventViews.get(id));
+
         EventFullDto eventDto = eventMapper.convertToFullDto(event);
         log.info("Запрошено событие по id = {} - {}", id, eventDto);
         return eventDto;
@@ -167,6 +192,7 @@ public class EventServiceImpl implements EventService {
     public EventFullDto getEventById(long userId, long eventId) {
         checkUserIfExists(userId);
         Event event = getEventByIdOrElseThrow(eventId);
+
         EventFullDto eventDto = eventMapper.convertToFullDto(event);
         log.info("Запрошено для пользователя по id = {} событие по id = {} - {}", userId, eventId, eventDto);
         return eventDto;
@@ -189,7 +215,6 @@ public class EventServiceImpl implements EventService {
         event.setInitiator(user);
         event.setCategory(category);
         event.setConfirmedRequests(0);
-        log.info("event = {}", event);
         EventFullDto eventDto = eventMapper.convertToFullDto(eventRepository.save(event));
         log.info("Добавлено новое событие - {}", eventDto);
         return eventDto;
@@ -201,11 +226,9 @@ public class EventServiceImpl implements EventService {
         checkUserIfExists(userId);
         Event event = getEventByIdOrElseThrow(eventId);
 
-        if (!event.getState().equals(EventState.CANCELED) && !event.isRequestModeration()) {
-            log.info("Событие не соответствует правилам для изменения: " +
-                    "Статус отмененный <> {} или в состоянии ожидания модерации <> {}", event.getState(),
-                    event.isRequestModeration());
-            throw new IllegalStateException("Only pending or canceled events can be changed");
+        if (event.getState() == EventState.PUBLISHED) {
+            log.info("Событие по id = {} уже имееет статус PUBLISHED", event.getId());
+            throw new IllegalStateException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
         }
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -213,6 +236,18 @@ public class EventServiceImpl implements EventService {
                 updateEventUserRequest.getEventDate())) {
             log.info("Дата события должна быть запланирована за два часа до настоящего момента");
             throw new IllegalArgumentException();
+        }
+
+        UpdateEventUserRequest.StateAction stateAction = updateEventUserRequest.getStateAction();
+        if (stateAction != null) {
+            switch (stateAction) {
+                case SEND_TO_REVIEW:
+                    event.setState(EventState.PENDING);
+                    break;
+                case CANCEL_REVIEW:
+                    event.setState(EventState.CANCELED);
+                    break;
+            }
         }
 
         Event updatingEvent = eventMapper.clone(event);
@@ -226,6 +261,11 @@ public class EventServiceImpl implements EventService {
     public EventFullDto editEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         Event event = getEventByIdOrElseThrow(eventId);
 
+        if (event.getState() == EventState.PUBLISHED) {
+            log.info("Событие по id = {} уже имееет статус PUBLISHED", event.getId());
+            throw new IllegalStateException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
+        }
+
         LocalDateTime currentTime = LocalDateTime.now();
         if (updateEventAdminRequest.getEventDate() != null && !currentTime.plusHours(1).isBefore(
                 updateEventAdminRequest.getEventDate())) {
@@ -236,9 +276,7 @@ public class EventServiceImpl implements EventService {
         UpdateEventAdminRequest.StateAction stateAction = updateEventAdminRequest.getStateAction();
         if (stateAction != null) {
             if (stateAction.equals(UpdateEventAdminRequest.StateAction.PUBLISH_EVENT)
-                    && !event.getState().equals(EventState.PENDING)
-                    || stateAction.equals(UpdateEventAdminRequest.StateAction.REJECT_EVENT)
-                    && !event.getState().equals(EventState.PUBLISHED)) {
+                    && !event.getState().equals(EventState.PENDING)) {
                 log.info("Событие не соответствует правилам для изменения: stateAction = {}, eventState = {}",
                         stateAction, event.getState());
                 throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
@@ -326,14 +364,48 @@ public class EventServiceImpl implements EventService {
     }
 
     private Sort makeSortCondition(EventSort eventSort) {
-        switch (eventSort) {
-            case EVENT_DATE:
-                return Sort.by("eventDate").ascending();
-            case VIEWS:
-                return Sort.by("views").ascending();
-            default:
-                return Sort.by("eventDate").descending();
+        if (eventSort.equals(EventSort.EVENT_DATE)) {
+            return Sort.by("eventDate").ascending();
         }
+        return Sort.by("views").descending();
+    }
+
+    private void addStats(HttpServletRequest request) {
+        statsClient.addHit(EndpointHitDto.builder()
+                .app("ewm")
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build());
+    }
+
+    private Map<Long, Long> getEventViews(Collection<Event> events) {
+        Map<String, Long> eventUriById = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toMap(id -> "/events/" + id, Function.identity()));
+
+        LocalDateTime start = events.stream()
+                .map(Event::getCreatedOn)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        Map<Long, Long> eventHits = new HashMap<>();
+        if (start != null) {
+            ResponseEntity<Object> stats = statsClient.getAllStats(
+                    start.format(DATETIME_FORMATTER),
+                    LocalDateTime.now().format(DATETIME_FORMATTER),
+                    eventUriById.keySet(), true);
+            ObjectMapper objectMapper = new ObjectMapper();
+            Collection<ViewStatsDto> statsList = objectMapper.convertValue(stats.getBody(), new TypeReference<>() {
+            });
+            eventHits = statsList.stream()
+                    .collect(Collectors.toMap(
+                            stat -> eventUriById.get(stat.getUri()),
+                            ViewStatsDto::getHits
+                    ));
+        }
+        return eventHits;
+
     }
 
     private Event getEventByIdOrElseThrow(long eventId) {

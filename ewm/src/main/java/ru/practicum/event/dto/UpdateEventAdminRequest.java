@@ -18,7 +18,7 @@ public class UpdateEventAdminRequest {
     @Size(min = 20, max = 2000)
     private final String annotation;
     private final Long category;
-    private final boolean paid;
+    private final Boolean paid;
     @FutureOrPresent
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private final LocalDateTime eventDate;
@@ -27,12 +27,8 @@ public class UpdateEventAdminRequest {
     @Min(value = 0)
     private final Integer participantLimit;
     private final StateAction stateAction;
-    private final boolean requestModeration;
+    private final Boolean requestModeration;
     private final Location location;
-
-    public boolean isNeedStateUpdate() {
-        return stateAction != null;
-    }
 
     public enum StateAction {
         PUBLISH_EVENT, REJECT_EVENT

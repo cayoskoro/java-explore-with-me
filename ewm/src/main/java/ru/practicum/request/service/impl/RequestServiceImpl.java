@@ -104,7 +104,7 @@ public class RequestServiceImpl implements RequestService {
                     "запроса по id = %d, следовательно, отмена невозможна", userId, requestId));
         }
 
-        if (request.getStatus() == RequestStatus.CONFIRMED) {
+        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             Event event = request.getEvent();
             event.setConfirmedRequests(event.getConfirmedRequests() - 1);
             eventRepository.save(event);

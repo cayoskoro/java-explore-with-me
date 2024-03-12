@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS events (
     longitude FLOAT NOT NULL,
     published_on TIMESTAMP WITHOUT TIME ZONE,
     request_moderation BOOLEAN DEFAULT TRUE,
-    confirmed_requests INTEGER DEFAULT 0
+    confirmed_requests INTEGER DEFAULT 0,
+    views INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS compilations (

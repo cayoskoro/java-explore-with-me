@@ -19,7 +19,7 @@ public class NewEventDto {
     @NotNull
     @Positive
     private final Long category;
-    private final boolean paid = false;
+    private final boolean paid;
     @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private final LocalDateTime eventDate;
@@ -28,7 +28,7 @@ public class NewEventDto {
     private final String description;
     @Min(value = 0)
     private final Integer participantLimit = 0;
-    private final boolean requestModeration = true;
+    private final boolean requestModeration;
     @NotNull
     private final Location location;
 }

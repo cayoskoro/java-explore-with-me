@@ -13,8 +13,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.dto.EndpointHitDto;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,16 +31,20 @@ public class StatsClient {
                 .build();
     }
 
-    public ResponseEntity<Object> getAllStats(LocalDateTime start, LocalDateTime end, Collection<String> uris,
+    public ResponseEntity<Object> getAllStats(String start, String end, Collection<String> uris,
                                               boolean unique) {
-        Map<String, Object> parameters = Map.of(
+        Map<String, Object> parameters = new HashMap<>(Map.of(
                 "start", start,
                 "end", end,
                 "uris", uris,
                 "unique", unique
-        );
-
-        return get("/stats", parameters);
+        ));
+        log.info("parameters = {}", parameters);
+        if (uris != null) {
+            parameters.put("uris", String.join(",", uris));
+            return get("/stats?start={start}&end={end}&unique={unique}&uris={uris}", parameters);
+        }
+        return get("/stats?start={start}&end={end}&unique={unique}", parameters);
     }
 
     public ResponseEntity<Object> addHit(EndpointHitDto endpointHitDto) {

@@ -24,6 +24,7 @@ public class CategoryAdminController {
     }
 
     @DeleteMapping("/{catId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCategory(@PathVariable long catId) {
         categoryService.deleteCategory(catId);
     }

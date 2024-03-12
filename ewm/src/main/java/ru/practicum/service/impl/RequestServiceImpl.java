@@ -45,17 +45,17 @@ public class RequestServiceImpl implements RequestService {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
 
-        if (requestRepository.findByRequesterIdAndEventId(userId, eventId) != null) {
-            log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", userId, eventId);
-            throw new IllegalStateException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
-                    userId, eventId));
-        }
-
         if (event.getInitiator().getId().equals(user.getId())) {
             log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
                     userId, eventId);
             throw new IllegalStateException(String.format("Инициатор события по id = %d не может добавить запрос" +
                     " на участие в своём событии по id = %d", userId, eventId));
+        }
+
+        if (requestRepository.findByRequesterIdAndEventId(userId, eventId) != null) {
+            log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", userId, eventId);
+            throw new IllegalStateException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
+                    userId, eventId));
         }
 
         if (!event.getState().equals(EventState.PUBLISHED)) {
@@ -72,13 +72,20 @@ public class RequestServiceImpl implements RequestService {
         Request request = Request.builder()
                 .event(event)
                 .requester(user)
-                .status(event.isRequestModeration() ? RequestStatus.REJECTED : RequestStatus.CONFIRMED)
+                .status(event.isRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
                 .created(LocalDateTime.now())
                 .build();
 
         ParticipationRequestDto participationRequestDto = requestMapper.convertToParticipationRequestDto(
                 requestRepository.save(request));
         log.info("Добавлен запрос на участие в событии - {}", participationRequestDto);
+
+        if (request.getStatus() == RequestStatus.CONFIRMED) {
+            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            eventRepository.save(event);
+            log.info("Количество подтвержденных запросов на участие для события по id = {} " +
+                    "увеличилось после подтверждения запроса на участие по id = {}", event.getId(), request.getId());
+        }
         return participationRequestDto;
     }
 

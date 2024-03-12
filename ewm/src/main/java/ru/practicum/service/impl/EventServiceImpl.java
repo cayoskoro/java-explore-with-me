@@ -11,16 +11,19 @@ import ru.practicum.dto.*;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.mapper.EventMapper;
+import ru.practicum.mapper.RequestMapper;
 import ru.practicum.mapper.UserMapper;
 import ru.practicum.model.*;
 import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
+import ru.practicum.repository.RequestRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.service.EventService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,9 +33,11 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final UserMapper userMapper;
     private final CategoryMapper categoryMapper;
+    private final RequestMapper requestMapper;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final RequestRepository requestRepository;
 
     @Override
     public Collection<EventFullDto> getAllEvents(Collection<Long> users, Collection<String> states,
@@ -138,7 +143,7 @@ public class EventServiceImpl implements EventService {
         if (!currentTime.plusHours(2).isBefore(newEventDto.getEventDate())) {
             log.info("Дата события должна быть запланирована за два часа до настоящего момента" +
                     " currentTime = {}, eventDate = {}", currentTime, newEventDto.getEventDate());
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Дата события должна быть запланирована за два часа до настоящего момента");
         }
 
         User user = getUserByIdOrElseThrow(userId);
@@ -147,7 +152,7 @@ public class EventServiceImpl implements EventService {
         event.setCreatedOn(currentTime);
         event.setInitiator(user);
         event.setCategory(category);
-        event.setState(EventState.PENDING);
+        log.info("event = {}", event);
         EventFullDto eventDto = eventMapper.convertToFullDto(eventRepository.save(event));
         log.info("Добавлено новое событие - {}", eventDto);
         return eventDto;
@@ -211,7 +216,61 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventRequestStatusUpdateResult editEventRequest(long userId, long eventId,
                                                            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        return null;
+        User user = getUserByIdOrElseThrow(userId);
+        Event event = getEventByIdOrElseThrow(eventId);
+        checkEventInitiator(user, event);
+
+        Collection<Request> updatingRequests = requestRepository.findAllByIdInAndStatus(
+                eventRequestStatusUpdateRequest.getRequestIds(), RequestStatus.PENDING);
+
+        Collection<Long> noPendingRequests = new ArrayList<>(eventRequestStatusUpdateRequest.getRequestIds());
+        noPendingRequests.removeAll(updatingRequests.stream().map(Request::getId).collect(Collectors.toList()));
+        if (!noPendingRequests.isEmpty()) {
+            log.info("Присутствуют запросы не в статусе PENDING - {}", noPendingRequests);
+            throw new IllegalStateException("Присутствуют запросы не в статусе PENDING - " + noPendingRequests);
+        }
+
+        Collection<Request> confirmedRequests = new ArrayList<>();
+        Collection<Request> rejectedRequests = new ArrayList<>();
+        Long countConfirmedRequests = event.getConfirmedRequests();
+        switch (eventRequestStatusUpdateRequest.getStatus()) {
+            case CONFIRMED:
+                if (event.getParticipantLimit() != 0 && countConfirmedRequests >= event.getParticipantLimit()) {
+                    log.info("Лимит заявок исчерпан participantLimit =  {}", event.getParticipantLimit());
+                    throw new IllegalArgumentException("Лимит заявок исчерпан participantLimit = " +
+                            event.getParticipantLimit());
+                }
+
+                for (Request it : updatingRequests) {
+                    if (countConfirmedRequests < event.getParticipantLimit()) {
+                        it.setStatus(RequestStatus.CONFIRMED);
+                        confirmedRequests.add(it);
+                        countConfirmedRequests++;
+                    } else {
+                        it.setStatus(RequestStatus.REJECTED);
+                        rejectedRequests.add(it);
+                    }
+                }
+                break;
+            case REJECTED:
+                updatingRequests.forEach(it -> {
+                    it.setStatus(RequestStatus.REJECTED);
+                    rejectedRequests.add(it);
+                });
+                break;
+        }
+
+        event.setConfirmedRequests(countConfirmedRequests);
+        log.info("Событие - {} подготовлено к обновлению после изменение статусов запросов", event);
+        eventRepository.save(event);
+        log.info("Событие подготовлены к обновлению после изменение статусов - {}", updatingRequests);
+        requestRepository.saveAll(updatingRequests);
+        log.info("Запросы пользователя по id = {} и событию по id - {} обновлены - {}", userId, eventId,
+                updatingRequests);
+        return EventRequestStatusUpdateResult.builder()
+                .confirmedRequests(requestMapper.convertToParticipationRequestDtoCollection(confirmedRequests))
+                .rejectedRequests(requestMapper.convertToParticipationRequestDtoCollection(rejectedRequests))
+                .build();
     }
 
     private enum EventSort {
@@ -241,6 +300,15 @@ public class EventServiceImpl implements EventService {
         if (!userRepository.existsById(userId)) {
             log.info("Пользователя по id = {} не существует", userId);
             throw new NotFoundException(String.format("Пользователя по id = %d не существует", userId));
+        }
+    }
+
+    private void checkEventInitiator(User user, Event event) {
+        if (!event.getInitiator().getId().equals(user.getId())) {
+            log.info("Пользователь по id = {} не является инициатором события по id = {}",
+                    user.getId(), event.getId());
+            throw new IllegalStateException(String.format("Пользователь по id = %d не является инициатором " +
+                    "события по id = %d", user.getId(), event.getId()));
         }
     }
 

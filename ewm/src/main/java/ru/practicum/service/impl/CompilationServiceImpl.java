@@ -52,6 +52,7 @@ public class CompilationServiceImpl implements CompilationService {
         Collection<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
         Compilation compilation = compilationMapper.convertNewCompilationDtoToEntity(newCompilationDto);
         compilation.setEvents(events);
+        log.info("compilation = {}", compilation);
         CompilationDto compilationDto = compilationMapper.convertToDto(compilationRepository.save(compilation));
         log.info("Добавлена новая подборка событий - {}", compilationDto);
         return compilationDto;

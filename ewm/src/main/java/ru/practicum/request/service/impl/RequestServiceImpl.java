@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.common.exception.ConflictException;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.request.dto.ParticipationRequestDto;
@@ -46,29 +47,28 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto addNewRequest(long userId, long eventId) {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
-        log.info("event = {}", event);
 
         if (event.getInitiator().getId().equals(user.getId())) {
             log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
                     userId, eventId);
-            throw new IllegalStateException(String.format("Инициатор события по id = %d не может добавить запрос" +
+            throw new ConflictException(String.format("Инициатор события по id = %d не может добавить запрос" +
                     " на участие в своём событии по id = %d", userId, eventId));
         }
 
         if (requestRepository.findByRequesterIdAndEventId(userId, eventId) != null) {
             log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", userId, eventId);
-            throw new IllegalStateException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
+            throw new ConflictException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
                     userId, eventId));
         }
 
         if (!event.getState().equals(EventState.PUBLISHED)) {
             log.info("Нельзя участвовать в неопубликованном событии - {}", event);
-            throw new IllegalStateException("Нельзя участвовать в неопубликованном событии - " + event);
+            throw new ConflictException("Нельзя участвовать в неопубликованном событии - " + event);
         }
 
         if (event.getParticipantLimit() != 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
             log.info("Достигнут лимит запросов на участие participantLimit = {}", event.getParticipantLimit());
-            throw new IllegalStateException("Достигнут лимит запросов на участие participantLimit = " +
+            throw new ConflictException("Достигнут лимит запросов на участие participantLimit = " +
                     event.getParticipantLimit());
         }
 
@@ -82,7 +82,6 @@ public class RequestServiceImpl implements RequestService {
 
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-            log.info("event after = {}", event);
             eventRepository.save(event);
             log.info("Количество подтвержденных запросов на участие для события по id = {} " +
                     "увеличилось после подтверждения запроса на участие по id = {}", event.getId(), request.getId());
@@ -103,7 +102,7 @@ public class RequestServiceImpl implements RequestService {
         if (!request.getRequester().getId().equals(userId)) {
             log.info("Пользователь по id = {} не является владельцем запроса по id = {}, " +
                     "следовательно, отмена невозможна", userId, requestId);
-            throw new IllegalStateException(String.format("Пользователь по id = %d не является владельцем " +
+            throw new ConflictException(String.format("Пользователь по id = %d не является владельцем " +
                     "запроса по id = %d, следовательно, отмена невозможна", userId, requestId));
         }
 

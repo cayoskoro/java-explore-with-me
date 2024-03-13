@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
 import ru.practicum.client.StatsClient;
+import ru.practicum.common.exception.ConflictException;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.event.dto.*;
@@ -230,7 +231,7 @@ public class EventServiceImpl implements EventService {
 
         if (event.getState() == EventState.PUBLISHED) {
             log.info("Событие по id = {} уже имееет статус PUBLISHED", event.getId());
-            throw new IllegalStateException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
+            throw new ConflictException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
         }
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -265,7 +266,7 @@ public class EventServiceImpl implements EventService {
 
         if (event.getState() == EventState.PUBLISHED) {
             log.info("Событие по id = {} уже имееет статус PUBLISHED", event.getId());
-            throw new IllegalStateException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
+            throw new ConflictException("Событие по id = " + event.getId() + " уже имееет статус PUBLISHED");
         }
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -281,7 +282,7 @@ public class EventServiceImpl implements EventService {
                     && !event.getState().equals(EventState.PENDING)) {
                 log.info("Событие не соответствует правилам для изменения: stateAction = {}, eventState = {}",
                         stateAction, event.getState());
-                throw new IllegalStateException("Cannot publish or reject the event because it's not in the right state");
+                throw new ConflictException("Cannot publish or reject the event because it's not in the right state");
             }
             switch (stateAction) {
                 case PUBLISH_EVENT:
@@ -315,7 +316,7 @@ public class EventServiceImpl implements EventService {
         noPendingRequests.removeAll(updatingRequests.stream().map(Request::getId).collect(Collectors.toList()));
         if (!noPendingRequests.isEmpty()) {
             log.info("Присутствуют запросы не в статусе PENDING - {}", noPendingRequests);
-            throw new IllegalStateException("Присутствуют запросы не в статусе PENDING - " + noPendingRequests);
+            throw new ConflictException("Присутствуют запросы не в статусе PENDING - " + noPendingRequests);
         }
 
         Collection<Request> confirmedRequests = new ArrayList<>();
@@ -325,7 +326,7 @@ public class EventServiceImpl implements EventService {
             case CONFIRMED:
                 if (event.getParticipantLimit() != 0 && countConfirmedRequests >= event.getParticipantLimit()) {
                     log.info("Лимит заявок исчерпан participantLimit =  {}", event.getParticipantLimit());
-                    throw new IllegalStateException("Лимит заявок исчерпан participantLimit = " +
+                    throw new ConflictException("Лимит заявок исчерпан participantLimit = " +
                             event.getParticipantLimit());
                 }
 
@@ -429,7 +430,7 @@ public class EventServiceImpl implements EventService {
         if (!event.getInitiator().getId().equals(user.getId())) {
             log.info("Пользователь по id = {} не является инициатором события по id = {}",
                     user.getId(), event.getId());
-            throw new IllegalStateException(String.format("Пользователь по id = %d не является инициатором " +
+            throw new ConflictException(String.format("Пользователь по id = %d не является инициатором " +
                     "события по id = %d", user.getId(), event.getId()));
         }
     }

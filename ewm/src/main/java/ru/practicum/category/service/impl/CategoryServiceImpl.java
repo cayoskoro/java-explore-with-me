@@ -12,7 +12,6 @@ import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.category.mapper.CategoryMapper;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
-import ru.practicum.event.repository.EventRepository;
 
 import java.util.Collection;
 
@@ -23,7 +22,6 @@ import java.util.Collection;
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
     private final CategoryRepository categoryRepository;
-    private final EventRepository eventRepository;
 
     @Override
     public Collection<CategoryDto> getAllCategories(int from, int size) {

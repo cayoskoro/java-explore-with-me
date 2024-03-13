@@ -15,7 +15,7 @@ public class NewCompilationDto {
     @Size(min = 1, max = 50)
     @NotBlank
     private final String title;
-    private final boolean pinned = false;
+    private final boolean pinned;
     @NotNull
     private final Collection<Long> events = new HashSet<>();
 }

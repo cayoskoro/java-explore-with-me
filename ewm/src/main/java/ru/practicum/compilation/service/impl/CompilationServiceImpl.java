@@ -26,10 +26,12 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
 
     @Override
-    public Collection<CompilationDto> getAllCompilations(boolean pinned, int from, int size) {
+    public Collection<CompilationDto> getAllCompilations(Boolean pinned, int from, int size) {
         PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
-        Collection<CompilationDto> compilationDtos = compilationMapper.convertToDtoCollection(
-                compilationRepository.findAllByPinnedIs(pinned, page).getContent());
+        Collection<Compilation> compilations = pinned != null ?
+                compilationRepository.findAllByPinnedIs(pinned, page).getContent() :
+                compilationRepository.findAll(page).getContent();
+        Collection<CompilationDto> compilationDtos = compilationMapper.convertToDtoCollection(compilations);
         log.info("Запрос подборок pinned = {} событий - {}", pinned, compilationDtos);
         return compilationDtos;
     }
@@ -48,7 +50,6 @@ public class CompilationServiceImpl implements CompilationService {
         Collection<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
         Compilation compilation = compilationMapper.convertNewCompilationDtoToEntity(newCompilationDto);
         compilation.setEvents(events);
-        log.info("compilation = {}", compilation);
         CompilationDto compilationDto = compilationMapper.convertToDto(compilationRepository.save(compilation));
         log.info("Добавлена новая подборка событий - {}", compilationDto);
         return compilationDto;

@@ -7,7 +7,7 @@ import java.util.Collection;
 
 @Transactional(readOnly = true)
 public interface CompilationService {
-    public Collection<CompilationDto> getAllCompilations(boolean pinned, int from, int size);
+    public Collection<CompilationDto> getAllCompilations(Boolean pinned, int from, int size);
 
     public CompilationDto getCompilationById(long compId);
 

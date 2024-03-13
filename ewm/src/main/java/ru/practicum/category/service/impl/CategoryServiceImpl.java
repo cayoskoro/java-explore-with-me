@@ -54,7 +54,6 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(long catId) {
         checkCategoryIfExists(catId);
-//        TODO: check that events with catId doesn't exists
         categoryRepository.deleteById(catId);
         log.info("Категория по id = {} удалена", catId);
     }

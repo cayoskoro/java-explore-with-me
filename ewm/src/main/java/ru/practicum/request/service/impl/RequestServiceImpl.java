@@ -74,7 +74,8 @@ public class RequestServiceImpl implements RequestService {
         Request request = Request.builder()
                 .event(event)
                 .requester(user)
-                .status(event.isRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
+                .status(event.getParticipantLimit() != 0 && event.isRequestModeration() ? RequestStatus.PENDING :
+                        RequestStatus.CONFIRMED)
                 .created(LocalDateTime.now())
                 .build();
 
@@ -82,7 +83,7 @@ public class RequestServiceImpl implements RequestService {
                 requestRepository.save(request));
         log.info("Добавлен запрос на участие в событии - {}", participationRequestDto);
 
-        if (request.getStatus() == RequestStatus.CONFIRMED) {
+        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
             eventRepository.save(event);
             log.info("Количество подтвержденных запросов на участие для события по id = {} " +

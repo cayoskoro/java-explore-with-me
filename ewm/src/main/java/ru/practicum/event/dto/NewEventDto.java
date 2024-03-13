@@ -28,7 +28,7 @@ public class NewEventDto {
     private final String description;
     @Min(value = 0)
     private final Integer participantLimit = 0;
-    private final boolean requestModeration;
+    private final boolean requestModeration = true;
     @NotNull
     private final Location location;
 }

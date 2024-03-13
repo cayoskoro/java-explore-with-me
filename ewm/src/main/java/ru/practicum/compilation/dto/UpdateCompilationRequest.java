@@ -11,6 +11,6 @@ import java.util.Collection;
 public class UpdateCompilationRequest {
     @Size(min = 1, max = 50)
     private final String title;
-    private final boolean pinned;
+    private final Boolean pinned;
     private final Collection<Long> events;
 }

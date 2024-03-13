@@ -323,7 +323,7 @@ public class EventServiceImpl implements EventService {
             case CONFIRMED:
                 if (event.getParticipantLimit() != 0 && countConfirmedRequests >= event.getParticipantLimit()) {
                     log.info("Лимит заявок исчерпан participantLimit =  {}", event.getParticipantLimit());
-                    throw new IllegalArgumentException("Лимит заявок исчерпан participantLimit = " +
+                    throw new IllegalStateException("Лимит заявок исчерпан participantLimit = " +
                             event.getParticipantLimit());
                 }
 

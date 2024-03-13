@@ -1,7 +1,9 @@
 package ru.practicum.compilation.service;
 
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.compilation.dto.*;
+import ru.practicum.compilation.dto.CompilationDto;
+import ru.practicum.compilation.dto.NewCompilationDto;
+import ru.practicum.compilation.dto.UpdateCompilationRequest;
 
 import java.util.Collection;
 

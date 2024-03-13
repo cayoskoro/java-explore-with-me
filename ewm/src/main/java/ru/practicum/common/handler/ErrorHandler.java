@@ -15,7 +15,6 @@ import javax.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 @RestControllerAdvice
 public class ErrorHandler {

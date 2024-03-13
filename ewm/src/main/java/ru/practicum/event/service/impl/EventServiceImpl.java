@@ -11,26 +11,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
+import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.client.StatsClient;
 import ru.practicum.common.exception.ConflictException;
+import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.event.dto.*;
+import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
-import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.QEvent;
+import ru.practicum.event.repository.EventRepository;
+import ru.practicum.event.service.EventService;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
 import ru.practicum.request.model.RequestStatus;
-import ru.practicum.category.repository.CategoryRepository;
-import ru.practicum.event.repository.EventRepository;
 import ru.practicum.request.repository.RequestRepository;
-import ru.practicum.user.repository.UserRepository;
-import ru.practicum.event.service.EventService;
 import ru.practicum.user.model.User;
+import ru.practicum.user.repository.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -91,7 +91,7 @@ public class EventServiceImpl implements EventService {
         }
         Collection<EventFullDto> eventDtos = eventMapper.convertToFullDtoCollection(events);
         log.info("Запрос списка событий по commonCondition = {}, users = {}, states = {}, categories = {}, " +
-                "rangeStart = {}, rangeEnd = {} " + "- {}", commonCondition, users, states, categories,
+                        "rangeStart = {}, rangeEnd = {} " + "- {}", commonCondition, users, states, categories,
                 rangeStart, rangeEnd, eventDtos);
         return eventDtos;
     }
@@ -147,7 +147,7 @@ public class EventServiceImpl implements EventService {
 
         Collection<EventShortDto> eventDtos = eventMapper.convertToShortDtoCollection(events);
         log.info("Запрос списка событий по text = {}, categories = {}, paid = {}, rangeStart = {}, rangeEnd = {} " +
-                "onlyAvailable = {}, sort = {} - {}", text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort,
+                        "onlyAvailable = {}, sort = {} - {}", text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort,
                 eventDtos);
         return eventDtos;
     }

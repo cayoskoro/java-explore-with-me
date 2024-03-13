@@ -5,14 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.compilation.dto.*;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.compilation.dto.CompilationDto;
+import ru.practicum.compilation.dto.NewCompilationDto;
+import ru.practicum.compilation.dto.UpdateCompilationRequest;
 import ru.practicum.compilation.mapper.CompilationMapper;
 import ru.practicum.compilation.model.Compilation;
-import ru.practicum.event.model.Event;
 import ru.practicum.compilation.repository.CompilationRepository;
-import ru.practicum.event.repository.EventRepository;
 import ru.practicum.compilation.service.CompilationService;
+import ru.practicum.event.model.Event;
+import ru.practicum.event.repository.EventRepository;
 
 import java.util.Collection;
 

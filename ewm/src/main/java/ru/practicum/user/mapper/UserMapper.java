@@ -1,6 +1,6 @@
 package ru.practicum.user.mapper;
 
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
 import org.mapstruct.control.DeepClone;
 import ru.practicum.user.dto.NewUserRequest;
 import ru.practicum.user.dto.UserDto;

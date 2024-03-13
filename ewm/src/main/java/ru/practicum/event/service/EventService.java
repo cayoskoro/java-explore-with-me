@@ -14,7 +14,7 @@ public interface EventService {
                                                  Collection<Long> categories, LocalDateTime rangeStart,
                                                  LocalDateTime rangeEnd, int from, int size);
 
-    public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, boolean paid,
+    public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, Boolean paid,
                                                   LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                   boolean onlyAvailable, String sort, int from, int size,
                                                   HttpServletRequest request);

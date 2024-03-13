@@ -22,7 +22,7 @@ public class EventPublicController {
     @GetMapping
     public Collection<EventShortDto> getAllEvents(@RequestParam(required = false) String text,
                                                   @RequestParam(required = false) Collection<Long> categories,
-                                                  @RequestParam(required = false) boolean paid,
+                                                  @RequestParam(required = false) Boolean paid,
                                                   @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
                                                   @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                                   @RequestParam(required = false) boolean onlyAvailable,

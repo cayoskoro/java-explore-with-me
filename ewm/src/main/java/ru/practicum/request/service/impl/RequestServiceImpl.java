@@ -46,6 +46,7 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto addNewRequest(long userId, long eventId) {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
+        log.info("event = {}", event);
 
         if (event.getInitiator().getId().equals(user.getId())) {
             log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
@@ -79,16 +80,17 @@ public class RequestServiceImpl implements RequestService {
                 .created(LocalDateTime.now())
                 .build();
 
-        ParticipationRequestDto participationRequestDto = requestMapper.convertToParticipationRequestDto(
-                requestRepository.save(request));
-        log.info("Добавлен запрос на участие в событии - {}", participationRequestDto);
-
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            log.info("event after = {}", event);
             eventRepository.save(event);
             log.info("Количество подтвержденных запросов на участие для события по id = {} " +
                     "увеличилось после подтверждения запроса на участие по id = {}", event.getId(), request.getId());
         }
+
+        ParticipationRequestDto participationRequestDto = requestMapper.convertToParticipationRequestDto(
+                requestRepository.save(request));
+        log.info("Добавлен запрос на участие в событии - {}", participationRequestDto);
         return participationRequestDto;
     }
 

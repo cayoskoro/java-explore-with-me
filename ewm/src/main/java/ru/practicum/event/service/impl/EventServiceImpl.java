@@ -96,7 +96,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, boolean paid,
+    public Collection<EventShortDto> getAllEvents(String text, Collection<Long> categories, Boolean paid,
                                                   LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                   boolean onlyAvailable, String sort, int from, int size,
                                                   HttpServletRequest request) {
@@ -117,7 +117,9 @@ public class EventServiceImpl implements EventService {
         if (categories != null && !categories.isEmpty()) {
             conditions.add(qEvent.category.id.in(categories));
         }
-        conditions.add(qEvent.paid.eq(paid));
+        if (paid != null) {
+            conditions.add(qEvent.paid.eq(paid));
+        }
         conditions.add(qEvent.eventDate.after(rangeStart != null ? rangeStart : currentTime));
         if (rangeEnd != null) {
             conditions.add(qEvent.eventDate.before(rangeEnd));

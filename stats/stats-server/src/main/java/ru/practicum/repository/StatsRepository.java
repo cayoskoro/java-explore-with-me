@@ -23,7 +23,7 @@ public interface StatsRepository extends JpaRepository<Hit, Long> {
             "GROUP BY h.app, h.uri " +
             "ORDER BY COUNT(h.ip) DESC")
     public Collection<Stats> findAllByTimestampBetweenDatesAndUrisInWithUniqueIp(LocalDateTime start, LocalDateTime end,
-                                                                     Collection<String> uris);
+                                                                                 Collection<String> uris);
 
     @Query(value = "SELECT new ru.practicum.model.Stats(h.app, h.uri, COUNT(h.ip)) " +
             "FROM Hit AS h " +

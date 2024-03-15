@@ -48,29 +48,10 @@ public class RequestServiceImpl implements RequestService {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
 
-        if (event.getInitiator().getId().equals(user.getId())) {
-            log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
-                    userId, eventId);
-            throw new ConflictException(String.format("Инициатор события по id = %d не может добавить запрос" +
-                    " на участие в своём событии по id = %d", userId, eventId));
-        }
-
-        if (requestRepository.findByRequesterIdAndEventId(userId, eventId) != null) {
-            log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", userId, eventId);
-            throw new ConflictException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
-                    userId, eventId));
-        }
-
-        if (!event.getState().equals(EventState.PUBLISHED)) {
-            log.info("Нельзя участвовать в неопубликованном событии - {}", event);
-            throw new ConflictException("Нельзя участвовать в неопубликованном событии - " + event);
-        }
-
-        if (event.getParticipantLimit() != 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
-            log.info("Достигнут лимит запросов на участие participantLimit = {}", event.getParticipantLimit());
-            throw new ConflictException("Достигнут лимит запросов на участие participantLimit = " +
-                    event.getParticipantLimit());
-        }
+        throwIfUserIsRequestInitiator(event, user);
+        throwIfRepeatedRequest(event, user);
+        throwIfNotPublishedEvent(event);
+        throwIfParticipantLimitOver(event);
 
         Request request = Request.builder()
                 .event(event)
@@ -99,12 +80,7 @@ public class RequestServiceImpl implements RequestService {
         checkUserIfExists(userId);
         Request request = getRequestByIdOrElseThrow(requestId);
 
-        if (!request.getRequester().getId().equals(userId)) {
-            log.info("Пользователь по id = {} не является владельцем запроса по id = {}, " +
-                    "следовательно, отмена невозможна", userId, requestId);
-            throw new ConflictException(String.format("Пользователь по id = %d не является владельцем " +
-                    "запроса по id = %d, следовательно, отмена невозможна", userId, requestId));
-        }
+        throwIfUserIsRequestInitiator(request, userId);
 
         if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
             Event event = request.getEvent();
@@ -117,6 +93,47 @@ public class RequestServiceImpl implements RequestService {
         request.setStatus(RequestStatus.CANCELED);
         log.info("Запрос на участие после изменения статуса на CANCELED подготовлен к обновлению - {}", request);
         return requestMapper.convertToParticipationRequestDto(requestRepository.save(request));
+    }
+
+    private void throwIfUserIsRequestInitiator(Request request, long userId) {
+        if (!request.getRequester().getId().equals(userId)) {
+            log.info("Пользователь по id = {} не является владельцем запроса по id = {}, " +
+                    "следовательно, отмена невозможна", userId, request.getRequester().getId());
+            throw new ConflictException(String.format("Пользователь по id = %d не является владельцем " +
+                    "запроса по id = %d, следовательно, отмена невозможна", userId, request.getRequester().getId()));
+        }
+    }
+
+    private void throwIfUserIsRequestInitiator(Event event, User user) {
+        if (event.getInitiator().getId().equals(user.getId())) {
+            log.info("Инициатор события по id = {} не может добавить запрос на участие в своём событии по id = {}",
+                    user.getId(), event.getId());
+            throw new ConflictException(String.format("Инициатор события по id = %d не может добавить запрос" +
+                    " на участие в своём событии по id = %d", user.getId(), event.getId()));
+        }
+    }
+
+    private void throwIfParticipantLimitOver(Event event) {
+        if (event.getParticipantLimit() != 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+            log.info("Достигнут лимит запросов на участие participantLimit = {}", event.getParticipantLimit());
+            throw new ConflictException("Достигнут лимит запросов на участие participantLimit = " +
+                    event.getParticipantLimit());
+        }
+    }
+
+    private void throwIfRepeatedRequest(Event event, User user) {
+        if (requestRepository.findByRequesterIdAndEventId(user.getId(), event.getId()) != null) {
+            log.info("Нельзя добавить повторный запрос userId = {}, eventId = {}", user.getId(), event.getId());
+            throw new ConflictException(String.format("Нельзя добавить повторный запрос userId = %d, eventId = %d",
+                    user.getId(), event.getId()));
+        }
+    }
+
+    private void throwIfNotPublishedEvent(Event event) {
+        if (!event.getState().equals(EventState.PUBLISHED)) {
+            log.info("Нельзя участвовать в неопубликованном событии - {}", event);
+            throw new ConflictException("Нельзя участвовать в неопубликованном событии - " + event);
+        }
     }
 
     private Request getRequestByIdOrElseThrow(long requestId) {

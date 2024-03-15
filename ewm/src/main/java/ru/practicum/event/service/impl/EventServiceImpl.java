@@ -15,6 +15,7 @@ import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.client.StatsClient;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.common.util.Constants;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.event.dto.*;
@@ -80,7 +81,7 @@ public class EventServiceImpl implements EventService {
             conditions.add(qEvent.eventDate.before(rangeEnd));
         }
 
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        PageRequest page = Constants.getDefaultPageRequest(from, size);
         Optional<BooleanExpression> commonCondition = conditions.stream()
                 .reduce(BooleanExpression::and);
         Collection<Event> events;
@@ -138,7 +139,7 @@ public class EventServiceImpl implements EventService {
             page = PageRequest.of(from > 0 ? from / size : 0, size,
                     makeSortCondition(EventSort.valueOf(sort)));
         } else {
-            page = PageRequest.of(from > 0 ? from / size : 0, size);
+            page = Constants.getDefaultPageRequest(from, size);
         }
 
         Collection<Event> events = eventRepository.findAll(commonCondition, page).getContent();
@@ -154,7 +155,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Collection<EventShortDto> getAllEvents(long userId, int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        PageRequest page = Constants.getDefaultPageRequest(from, size);
         checkUserIfExists(userId);
         Collection<EventShortDto> eventDtos = eventMapper.convertToShortDtoCollection(eventRepository
                 .findAllByInitiatorId(userId, page).getContent());

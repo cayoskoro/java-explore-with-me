@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.common.util.Constants;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.compilation.dto.UpdateCompilationRequest;
@@ -29,7 +30,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public Collection<CompilationDto> getAllCompilations(Boolean pinned, int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        PageRequest page = Constants.getDefaultPageRequest(from, size);
         Collection<Compilation> compilations = pinned != null ?
                 compilationRepository.findAllByPinnedIs(pinned, page).getContent() :
                 compilationRepository.findAll(page).getContent();

@@ -12,6 +12,7 @@ import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.common.util.Constants;
 
 import java.util.Collection;
 
@@ -25,7 +26,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Collection<CategoryDto> getAllCategories(int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        PageRequest page = Constants.getDefaultPageRequest(from, size);
         Collection<CategoryDto> categoryDtos = categoryMapper.convertToDtoCollection(categoryRepository.findAll(page)
                 .getContent());
         log.info("Запрос списка всех категорий - {}", categoryDtos);

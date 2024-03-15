@@ -1,6 +1,5 @@
 package ru.practicum.event.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.event.dto.*;
 import ru.practicum.request.dto.ParticipationRequestDto;
 
@@ -8,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
-@Transactional(readOnly = true)
 public interface EventService {
     public Collection<EventFullDto> getAllEvents(Collection<Long> users, Collection<String> states,
                                                  Collection<Long> categories, LocalDateTime rangeStart,
@@ -27,16 +25,12 @@ public interface EventService {
 
     public EventFullDto getEventById(long userId, long eventId);
 
-    @Transactional
     public EventFullDto addNewEvent(long userId, NewEventDto newEventDto);
 
-    @Transactional
     public EventFullDto editEvent(long userId, long eventId, UpdateEventUserRequest updateEventUserRequest);
 
-    @Transactional
     public EventFullDto editEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
-    @Transactional
     public EventRequestStatusUpdateResult editEventRequest(long userId, long eventId,
                                                            EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 }

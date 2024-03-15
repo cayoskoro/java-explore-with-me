@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.common.util.Constants;
 import ru.practicum.user.dto.NewUserRequest;
 import ru.practicum.user.dto.UserDto;
 import ru.practicum.user.mapper.UserMapper;
@@ -26,7 +27,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Collection<UserDto> getAllUsers(Collection<Long> ids, int from, int size) {
-        PageRequest page = PageRequest.of(from > 0 ? from / size : 0, size);
+        PageRequest page = Constants.getDefaultPageRequest(from, size);
         Page<User> userPage = ids == null ? userRepository.findAll(page) : userRepository.findByIdIn(ids, page);
         Collection<UserDto> userDtos = userMapper.convertToDtoCollection(userPage.getContent());
         log.info("Запрос списка пользователей из ids = {} - {}", ids, userDtos);

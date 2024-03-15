@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.common.exception.DateNotValidException;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.mapper.HitMapper;
@@ -30,6 +31,13 @@ public class StatsServiceImpl implements StatsService {
                                                 boolean unique) {
         log.info("Запрос статистики с параметрами: start = {}, end = {}, uris = {}, unique = {}", start, end, uris,
                 unique);
+
+        if (end.isBefore(start)) {
+            throw new DateNotValidException("Значение end не должно быть раньше значения start");
+        }
+        if (start.isAfter(LocalDateTime.now())) {
+            throw new DateNotValidException("Значение now не должно быть раньше значения start");
+        }
 
         Collection<Stats> statsCollection;
         if (unique) {

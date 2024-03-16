@@ -239,7 +239,7 @@ public class EventServiceImpl implements EventService {
         if (updateEventUserRequest.getEventDate() != null && !currentTime.plusHours(2).isBefore(
                 updateEventUserRequest.getEventDate())) {
             log.info("Дата события должна быть запланирована за два часа до настоящего момента");
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Дата события должна быть запланирована за два часа до настоящего момента");
         }
 
         UpdateEventUserRequest.StateAction stateAction = updateEventUserRequest.getStateAction();

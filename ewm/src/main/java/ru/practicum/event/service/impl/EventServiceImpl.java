@@ -178,7 +178,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto getEventById(long id, HttpServletRequest request) {
         Event event = getEventByIdOrElseThrow(id);
-        if (!event.getState().equals(EventState.PUBLISHED)) {
+        if (event.getState() != EventState.PUBLISHED) {
             log.info("Событие не является опубликованным");
             throw new NotFoundException("Событие не является опубликованным");
         }
@@ -368,7 +368,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private Sort makeSortCondition(EventSort eventSort) {
-        if (eventSort.equals(EventSort.EVENT_DATE)) {
+        if (eventSort == EventSort.EVENT_DATE) {
             return Sort.by("eventDate").ascending();
         }
         return Sort.by("views").descending();

@@ -76,7 +76,7 @@ public class CommentServiceImpl implements CommentService {
         User user = getUserByIdOrElseThrow(userId);
         Event event = getEventByIdOrElseThrow(eventId);
 
-        if (!event.getState().equals(EventState.PUBLISHED)) {
+        if (event.getState() != EventState.PUBLISHED) {
             log.info("Нельзя добавить комментарий для неопубликованного события");
             throw new ConflictException("Нельзя добавить комментарий для неопубликованного события");
         }
@@ -138,12 +138,12 @@ public class CommentServiceImpl implements CommentService {
     }
 
     private void checkUserIsCommentAuthor(Comment comment, User user) {
-        if (!comment.getAuthor().getId().equals(user.getId())) {
-            log.info("Пользователя по id = {} не является автором комментария по id = {}", user.getId(),
-                    comment.getAuthor().getId());
+        Long commentId = comment.getAuthor().getId();
+        if (!commentId.equals(user.getId())) {
+            log.info("Пользователя по id = {} не является автором комментария по id = {}", user.getId(), commentId);
             throw new ConflictException(
                     String.format("Пользователя по id = %d не является автором комментария по id = %d",
-                            user.getId(), comment.getAuthor().getId()));
+                            user.getId(), commentId));
         }
     }
 

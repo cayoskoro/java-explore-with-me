@@ -61,7 +61,7 @@ public class RequestServiceImpl implements RequestService {
                 .created(LocalDateTime.now())
                 .build();
 
-        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+        if (request.getStatus() == RequestStatus.CONFIRMED) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
             eventRepository.save(event);
             log.info("Количество подтвержденных запросов на участие для события по id = {} " +
@@ -82,7 +82,7 @@ public class RequestServiceImpl implements RequestService {
 
         throwIfUserIsRequestInitiator(request, userId);
 
-        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+        if (request.getStatus() == RequestStatus.CONFIRMED) {
             Event event = request.getEvent();
             event.setConfirmedRequests(event.getConfirmedRequests() - 1);
             eventRepository.save(event);
@@ -130,7 +130,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     private void throwIfNotPublishedEvent(Event event) {
-        if (!event.getState().equals(EventState.PUBLISHED)) {
+        if (event.getState() != EventState.PUBLISHED) {
             log.info("Нельзя участвовать в неопубликованном событии - {}", event);
             throw new ConflictException("Нельзя участвовать в неопубликованном событии - " + event);
         }
